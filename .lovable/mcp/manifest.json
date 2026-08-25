@@ -1,0 +1,228 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://hmsbtcgtevdrdcisovdr.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "gestao-sair-do-clt",
+      "version": "0.1.0",
+      "title": "Gestão Sair do CLT"
+    },
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "Listar produtos",
+        "description": "Lista os produtos do usuário com custo, preço de venda, estoque, estoque mínimo e margem.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "search": {
+              "description": "Filtra pelo nome do produto.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Máximo de itens (padrão 50).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_product",
+        "title": "Cadastrar produto",
+        "description": "Cadastra um produto com preço de custo, preço de venda e estoque inicial para o usuário autenticado.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nome do produto."
+            },
+            "cost_price": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Quanto você pagou por unidade (R$)."
+            },
+            "sale_price": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Por quanto pretende vender por unidade (R$)."
+            },
+            "stock": {
+              "description": "Estoque inicial (padrão 0).",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "min_stock": {
+              "description": "Estoque mínimo de alerta (padrão 0).",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "sku": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "cost_price",
+            "sale_price"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "record_purchase",
+        "title": "Registrar compra",
+        "description": "Registra uma compra (entrada de estoque) de um produto. O estoque é atualizado automaticamente.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "product_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "ID do produto (use list_products)."
+            },
+            "quantity": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991,
+              "description": "Quantidade comprada."
+            },
+            "unit_cost": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Custo unitário pago (R$)."
+            },
+            "purchased_at": {
+              "description": "Data da compra (AAAA-MM-DD). Padrão: hoje.",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "product_id",
+            "quantity",
+            "unit_cost"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "record_sale",
+        "title": "Registrar venda",
+        "description": "Registra uma venda de um produto. Baixa o estoque e guarda o custo unitário para calcular o lucro real.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "product_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "ID do produto (use list_products)."
+            },
+            "quantity": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991,
+              "description": "Quantidade vendida."
+            },
+            "unit_price": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Preço unitário de venda (R$)."
+            },
+            "unit_cost": {
+              "description": "Custo unitário. Se omitido, usa o custo cadastrado no produto.",
+              "type": "number",
+              "minimum": 0
+            },
+            "sold_at": {
+              "description": "Data da venda (AAAA-MM-DD). Padrão: hoje.",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "channel": {
+              "description": "Canal de venda (ex.: Instagram, Shopee).",
+              "type": "string"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "product_id",
+            "quantity",
+            "unit_price"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "business_summary",
+        "title": "Resumo do negócio",
+        "description": "Resumo financeiro: investido em compras, receita, lucro realizado, estoque atual, lucro parado no estoque e produtos com estoque baixo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "since": {
+              "description": "Considera apenas compras/vendas a partir desta data (AAAA-MM-DD).",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
