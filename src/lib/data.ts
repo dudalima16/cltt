@@ -10,6 +10,7 @@ export type Product = {
   cost_price: number;
   extra_cost: number;
   sale_price: number;
+  extra_charge: number;
   stock: number;
   min_stock: number;
   notes: string | null;
@@ -59,7 +60,14 @@ export function useProducts() {
       if (error) throw error;
       return (data ?? []).map(
         (r) =>
-          num(r, ["cost_price", "extra_cost", "sale_price", "stock", "min_stock"]) as unknown as Product,
+          num(r, [
+            "cost_price",
+            "extra_cost",
+            "sale_price",
+            "extra_charge",
+            "stock",
+            "min_stock",
+          ]) as unknown as Product,
       );
     },
   });
@@ -113,6 +121,7 @@ export type ProductInput = {
   cost_price: number;
   extra_cost: number;
   sale_price: number;
+  extra_charge: number;
   stock: number;
   min_stock: number;
 };

@@ -16,6 +16,11 @@ export default defineTool({
       .optional()
       .describe("Outros custos por unidade, ex.: gasolina, taxa de entrega (padrão 0)."),
     sale_price: z.number().min(0).describe("Por quanto pretende vender por unidade (R$)."),
+    extra_charge: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("Cobrança extra por unidade, ex.: taxa de entrega cobrada do cliente (padrão 0)."),
     stock: z.number().int().min(0).optional().describe("Estoque inicial (padrão 0)."),
     min_stock: z.number().int().min(0).optional().describe("Estoque mínimo de alerta (padrão 0)."),
     sku: z.string().trim().optional(),
@@ -41,6 +46,7 @@ export default defineTool({
         cost_price: input.cost_price,
         extra_cost: input.extra_cost ?? 0,
         sale_price: input.sale_price,
+        extra_charge: input.extra_charge ?? 0,
         stock: 0,
         min_stock: input.min_stock ?? 0,
       })

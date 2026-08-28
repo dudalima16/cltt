@@ -10,6 +10,7 @@ CREATE TABLE public.products (
   cost_price numeric(12,2) NOT NULL DEFAULT 0,
   extra_cost numeric(12,2) NOT NULL DEFAULT 0,
   sale_price numeric(12,2) NOT NULL DEFAULT 0,
+  extra_charge numeric(12,2) NOT NULL DEFAULT 0,
   stock integer NOT NULL DEFAULT 0,
   min_stock integer NOT NULL DEFAULT 0,
   notes text,

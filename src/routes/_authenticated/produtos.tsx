@@ -23,12 +23,12 @@ export const Route = createFileRoute("/_authenticated/produtos")({
       { title: "Produtos — Gestão Sair do CLT" },
       {
         name: "description",
-        content: "Cadastre seus produtos com preço de compra, preço de venda e estoque mínimo.",
+        content: "Cadastre seus produtos com preço de compra, preço de venda e estoque.",
       },
       { property: "og:title", content: "Produtos — Gestão Sair do CLT" },
       {
         property: "og:description",
-        content: "Cadastre seus produtos com preço de compra, preço de venda e estoque mínimo.",
+        content: "Cadastre seus produtos com preço de compra, preço de venda e estoque.",
       },
     ],
   }),
@@ -37,13 +37,11 @@ export const Route = createFileRoute("/_authenticated/produtos")({
 
 const empty = {
   name: "",
-  sku: "",
-  category: "",
   cost_price: "",
   extra_cost: "",
   sale_price: "",
+  extra_charge: "",
   stock: "0",
-  min_stock: "0",
 };
 
 function Produtos() {
@@ -57,13 +55,7 @@ function Produtos() {
 
   const list = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return (products.data ?? []).filter(
-      (p) =>
-        !term ||
-        p.name.toLowerCase().includes(term) ||
-        (p.sku ?? "").toLowerCase().includes(term) ||
-        (p.category ?? "").toLowerCase().includes(term),
-    );
+    return (products.data ?? []).filter((p) => !term || p.name.toLowerCase().includes(term));
   }, [products.data, search]);
 
   function openNew() {
@@ -76,13 +68,11 @@ function Produtos() {
     setEditing(p);
     setForm({
       name: p.name,
-      sku: p.sku ?? "",
-      category: p.category ?? "",
       cost_price: String(p.cost_price),
       extra_cost: String(p.extra_cost),
       sale_price: String(p.sale_price),
+      extra_charge: String(p.extra_charge),
       stock: String(p.stock),
-      min_stock: String(p.min_stock),
     });
     setOpen(true);
   }
@@ -100,13 +90,14 @@ function Produtos() {
         previousStock: editing?.stock,
         values: {
           name: name.slice(0, 120),
-          sku: form.sku.trim().slice(0, 60) || null,
-          category: form.category.trim().slice(0, 60) || null,
+          sku: null,
+          category: null,
           cost_price: Number(form.cost_price.replace(",", ".")) || 0,
           extra_cost: Number(form.extra_cost.replace(",", ".")) || 0,
           sale_price: Number(form.sale_price.replace(",", ".")) || 0,
+          extra_charge: Number(form.extra_charge.replace(",", ".")) || 0,
           stock: Math.max(Math.trunc(Number(form.stock) || 0), 0),
-          min_stock: Math.max(Math.trunc(Number(form.min_stock) || 0), 0),
+          min_stock: 0,
         },
       });
       toast.success(editing ? "Produto atualizado." : "Produto cadastrado.");
@@ -134,7 +125,7 @@ function Produtos() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, código ou categoria"
+            placeholder="Buscar por nome"
             maxLength={80}
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
@@ -161,15 +152,13 @@ function Produtos() {
               <tbody>
                 {list.map((p) => {
                   const totalCost = p.cost_price + p.extra_cost;
+                  const totalPrice = p.sale_price + p.extra_charge;
                   const margin =
-                    p.sale_price > 0 ? ((p.sale_price - totalCost) / p.sale_price) * 100 : 0;
+                    totalPrice > 0 ? ((totalPrice - totalCost) / totalPrice) * 100 : 0;
                   return (
                     <tr key={p.id} className="border-b border-border/60 last:border-0">
                       <td className="px-4 py-3">
                         <p className="font-medium">{p.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {[p.sku, p.category].filter(Boolean).join(" · ") || "—"}
-                        </p>
                       </td>
                       <td className="px-4 py-3">
                         {brl(totalCost)}
@@ -179,22 +168,25 @@ function Produtos() {
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-3">{brl(p.sale_price)}</td>
+                      <td className="px-4 py-3">
+                        {brl(totalPrice)}
+                        {p.extra_charge > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {brl(p.sale_price)} + {brl(p.extra_charge)} cobrado
+                          </p>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={margin >= 0 ? "text-success" : "text-destructive"}>
                           {pct(margin)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={
-                            p.stock <= p.min_stock ? "font-medium text-warning" : undefined
-                          }
-                        >
+                        <span className={p.stock <= 0 ? "font-medium text-warning" : undefined}>
                           {int(p.stock)}
                         </span>
                       </td>
-                      <td className="px-4 py-3">{brl(p.stock * p.sale_price)}</td>
+                      <td className="px-4 py-3">{brl(p.stock * totalPrice)}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
@@ -244,22 +236,6 @@ function Produtos() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Código / SKU</Label>
-                <Input
-                  value={form.sku}
-                  maxLength={60}
-                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <Input
-                  value={form.category}
-                  maxLength={60}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label>Preço de custo (R$)</Label>
                 <Input
                   inputMode="decimal"
@@ -288,7 +264,20 @@ function Produtos() {
                   de marketplace (essa você calcula na Calculadora de Margem).
                 </p>
               </div>
-              <div className="space-y-2">
+              <div className="col-span-2 space-y-2">
+                <Label>Cobrança extra por unidade (R$, opcional)</Label>
+                <Input
+                  inputMode="decimal"
+                  value={form.extra_charge}
+                  onChange={(e) => setForm({ ...form, extra_charge: e.target.value })}
+                  placeholder="Ex.: taxa de entrega que você cobra do cliente…"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Some no preço de venda — é dinheiro que entra além do preço do produto em
+                  si.
+                </p>
+              </div>
+              <div className="col-span-2 space-y-2">
                 <Label htmlFor="stock">{editing ? "Estoque atual" : "Estoque inicial"}</Label>
                 <Input
                   id="stock"
@@ -300,18 +289,6 @@ function Produtos() {
                   {editing
                     ? "Aumentar esse número conta como uma nova compra (investimento) automaticamente. Diminuir é tratado como correção manual (perda, avaria, contagem)."
                     : "Quantidade que você já tem. Isso conta como investimento automaticamente nos Relatórios."}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="min_stock">Estoque mínimo de alerta</Label>
-                <Input
-                  id="min_stock"
-                  inputMode="numeric"
-                  value={form.min_stock}
-                  onChange={(e) => setForm({ ...form, min_stock: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Quando o estoque atual chegar nesse número, o painel avisa que está acabando.
                 </p>
               </div>
             </div>

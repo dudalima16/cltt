@@ -70,7 +70,7 @@ function Painel() {
     const spent = periodPurchases.reduce((sum, p) => sum + p.quantity * p.unit_cost, 0);
     const stockUnits = list.reduce((sum, p) => sum + p.stock, 0);
     const stockCost = list.reduce((sum, p) => sum + p.stock * p.cost_price, 0);
-    const stockRevenue = list.reduce((sum, p) => sum + p.stock * p.sale_price, 0);
+    const stockRevenue = list.reduce((sum, p) => sum + p.stock * (p.sale_price + p.extra_charge), 0);
     const catalogValue = list.reduce((sum, p) => sum + p.stock * p.cost_price, 0);
     // "Outros custos" (gasolina, entrega...) só pesam na hora da venda, não
     // na compra — por isso entram aqui no lucro projetado, não no investido.
@@ -106,7 +106,7 @@ function Painel() {
       .filter((p) => p.stock <= p.min_stock)
       .map((p) => {
         const sold = recentSoldByProduct.get(p.id) ?? 0;
-        const margin = p.sale_price - p.cost_price - p.extra_cost;
+        const margin = p.sale_price + p.extra_charge - p.cost_price - p.extra_cost;
         const velocityPerMonth = sold / (RESTOCK_LOOKBACK_DAYS / 30);
         const suggestedQty = Math.max(Math.ceil(velocityPerMonth), p.min_stock, 1);
         return { ...p, sold, margin, suggestedQty, score: sold * margin };

@@ -68,7 +68,7 @@ function Vendas() {
     setForm((f) => ({
       ...f,
       product_id: id,
-      unit_price: p ? String(p.sale_price) : f.unit_price,
+      unit_price: p ? String(p.sale_price + p.extra_charge) : f.unit_price,
       unit_cost: p ? String(p.cost_price + p.extra_cost) : f.unit_cost,
     }));
   }

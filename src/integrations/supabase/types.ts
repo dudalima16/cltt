@@ -19,6 +19,7 @@ export type Database = {
           category: string | null
           cost_price: number
           extra_cost: number
+          extra_charge: number
           created_at: string
           id: string
           min_stock: number
@@ -34,6 +35,7 @@ export type Database = {
           category?: string | null
           cost_price?: number
           extra_cost?: number
+          extra_charge?: number
           created_at?: string
           id?: string
           min_stock?: number
@@ -49,6 +51,7 @@ export type Database = {
           category?: string | null
           cost_price?: number
           extra_cost?: number
+          extra_charge?: number
           created_at?: string
           id?: string
           min_stock?: number
