@@ -22,6 +22,10 @@ export default defineTool({
       .optional()
       .describe("Cobrança extra por unidade, ex.: taxa de entrega cobrada do cliente (padrão 0)."),
     stock: z.number().int().min(0).optional().describe("Estoque inicial (padrão 0)."),
+    registered_at: z
+      .string()
+      .optional()
+      .describe("Data de cadastro (AAAA-MM-DD), útil se o produto foi cadastrado antes de chegar. Padrão: hoje."),
     min_stock: z.number().int().min(0).optional().describe("Estoque mínimo de alerta (padrão 0)."),
     sku: z.string().trim().optional(),
     category: z.string().trim().optional(),
@@ -49,6 +53,7 @@ export default defineTool({
         extra_charge: input.extra_charge ?? 0,
         stock: 0,
         min_stock: input.min_stock ?? 0,
+        registered_at: input.registered_at ?? new Date().toISOString().slice(0, 10),
       })
       .select()
       .single();
