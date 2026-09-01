@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDeleteRow, useProducts, useSaveProduct, type Product } from "@/lib/data";
-import { brl, errorMessage, int, pct } from "@/lib/format";
+import { brl, errorMessage, fullDate, int, pct, today } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/produtos")({
   head: () => ({
@@ -42,6 +42,7 @@ const empty = {
   sale_price: "",
   extra_charge: "",
   stock: "0",
+  registered_at: today(),
 };
 
 function Produtos() {
@@ -73,6 +74,7 @@ function Produtos() {
       sale_price: String(p.sale_price),
       extra_charge: String(p.extra_charge),
       stock: String(p.stock),
+      registered_at: p.registered_at,
     });
     setOpen(true);
   }
@@ -98,6 +100,7 @@ function Produtos() {
           extra_charge: Number(form.extra_charge.replace(",", ".")) || 0,
           stock: Math.max(Math.trunc(Number(form.stock) || 0), 0),
           min_stock: 0,
+          registered_at: form.registered_at || today(),
         },
       });
       toast.success(editing ? "Produto atualizado." : "Produto cadastrado.");
@@ -146,6 +149,7 @@ function Produtos() {
                   <th className="px-4 py-3 font-medium">Margem</th>
                   <th className="px-4 py-3 font-medium">Estoque</th>
                   <th className="px-4 py-3 font-medium">Retorno previsto</th>
+                  <th className="px-4 py-3 font-medium">Cadastrado em</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -187,6 +191,9 @@ function Produtos() {
                         </span>
                       </td>
                       <td className="px-4 py-3">{brl(p.stock * totalPrice)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {fullDate(p.registered_at)}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
@@ -289,6 +296,19 @@ function Produtos() {
                   {editing
                     ? "Aumentar esse número conta como uma nova compra (investimento) automaticamente. Diminuir é tratado como correção manual (perda, avaria, contagem)."
                     : "Quantidade que você já tem. Isso conta como investimento automaticamente nos Relatórios."}
+                </p>
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Data de cadastro</Label>
+                <Input
+                  type="date"
+                  value={form.registered_at}
+                  onChange={(e) => setForm({ ...form, registered_at: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Pode editar à vontade — útil quando você cadastra o produto antes dele
+                  chegar, pra não perder a informação. Isso é usado pra calcular quanto
+                  tempo demora até vender.
                 </p>
               </div>
             </div>

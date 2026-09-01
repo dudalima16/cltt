@@ -44,7 +44,10 @@ function Relatorios() {
 
     const invested = allPurchases.reduce((s, p) => s + p.quantity * p.unit_cost, 0);
     const revenue = allSales.reduce((s, v) => s + v.quantity * v.unit_price, 0);
-    const profit = allSales.reduce((s, v) => s + v.quantity * (v.unit_price - v.unit_cost), 0);
+    const profit = allSales.reduce(
+      (s, v) => s + v.quantity * (v.unit_price - v.unit_cost) - v.extra_expense,
+      0,
+    );
     const stockCost = list.reduce((s, p) => s + p.stock * p.cost_price, 0);
     const stockRevenue = list.reduce((s, p) => s + p.stock * p.sale_price, 0);
 
@@ -53,7 +56,20 @@ function Relatorios() {
         const rows = allSales.filter((s) => s.product_id === p.id);
         const sold = rows.reduce((s, v) => s + v.quantity, 0);
         const rev = rows.reduce((s, v) => s + v.quantity * v.unit_price, 0);
-        const prof = rows.reduce((s, v) => s + v.quantity * (v.unit_price - v.unit_cost), 0);
+        const prof = rows.reduce(
+          (s, v) => s + v.quantity * (v.unit_price - v.unit_cost) - v.extra_expense,
+          0,
+        );
+        const daysList = rows.map((s) =>
+          Math.round(
+            (new Date(`${s.sold_at}T12:00:00`).getTime() -
+              new Date(`${p.registered_at}T12:00:00`).getTime()) /
+              86_400_000,
+          ),
+        );
+        const avgDays =
+          daysList.length > 0 ? daysList.reduce((a, b) => a + b, 0) / daysList.length : null;
+        const withDiscount = rows.filter((s) => s.discount > 0).length;
         return {
           id: p.id,
           name: p.name,
@@ -62,6 +78,8 @@ function Relatorios() {
           prof,
           stock: p.stock,
           potential: p.stock * (p.sale_price - p.cost_price),
+          avgDays,
+          discountRate: rows.length > 0 ? (withDiscount / rows.length) * 100 : 0,
         };
       })
       .sort((a, b) => b.prof - a.prof);
@@ -155,6 +173,11 @@ function Relatorios() {
       <div className="panel mt-6 overflow-hidden">
         <div className="border-b border-border p-5">
           <h2 className="text-lg font-semibold">Desempenho por produto</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Use "Dias méd. até vender" e "% com desconto" pra decidir o que vale reinvestir:
+            venda rápida e sem desconto é sinal de reabastecer; muito tempo parado ou sempre
+            com desconto pode ser hora de repensar.
+          </p>
         </div>
         {data.perProduct.length === 0 ? (
           <p className="p-10 text-center text-sm text-muted-foreground">
@@ -169,6 +192,8 @@ function Relatorios() {
                   <th className="px-4 py-3 font-medium">Vendidos</th>
                   <th className="px-4 py-3 font-medium">Receita</th>
                   <th className="px-4 py-3 font-medium">Lucro</th>
+                  <th className="px-4 py-3 font-medium">Dias méd. até vender</th>
+                  <th className="px-4 py-3 font-medium">% com desconto</th>
                   <th className="px-4 py-3 font-medium">Em estoque</th>
                   <th className="px-4 py-3 font-medium">Lucro potencial</th>
                 </tr>
@@ -180,6 +205,12 @@ function Relatorios() {
                     <td className="px-4 py-3">{int(p.sold)}</td>
                     <td className="px-4 py-3">{brl(p.rev)}</td>
                     <td className="px-4 py-3 text-success">{brl(p.prof)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {p.avgDays !== null ? `${p.avgDays.toFixed(0)} dia(s)` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {p.sold > 0 ? pct(p.discountRate) : "—"}
+                    </td>
                     <td className="px-4 py-3">{int(p.stock)}</td>
                     <td className="px-4 py-3 text-primary">{brl(p.potential)}</td>
                   </tr>

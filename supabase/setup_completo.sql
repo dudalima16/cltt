@@ -13,6 +13,7 @@ CREATE TABLE public.products (
   extra_charge numeric(12,2) NOT NULL DEFAULT 0,
   stock integer NOT NULL DEFAULT 0,
   min_stock integer NOT NULL DEFAULT 0,
+  registered_at date NOT NULL DEFAULT current_date,
   notes text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -38,6 +39,8 @@ CREATE TABLE public.sales (
   unit_cost numeric(12,2) NOT NULL DEFAULT 0,
   sold_at date NOT NULL DEFAULT current_date,
   channel text,
+  discount numeric(12,2) NOT NULL DEFAULT 0,
+  extra_expense numeric(12,2) NOT NULL DEFAULT 0,
   notes text,
   created_at timestamptz NOT NULL DEFAULT now()
 );

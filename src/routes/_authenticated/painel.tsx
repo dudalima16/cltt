@@ -67,6 +67,7 @@ function Painel() {
 
     const revenue = periodSales.reduce((sum, s) => sum + s.quantity * s.unit_price, 0);
     const cogs = periodSales.reduce((sum, s) => sum + s.quantity * s.unit_cost, 0);
+    const extraExpenses = periodSales.reduce((sum, s) => sum + s.extra_expense, 0);
     const spent = periodPurchases.reduce((sum, p) => sum + p.quantity * p.unit_cost, 0);
     const stockUnits = list.reduce((sum, p) => sum + p.stock, 0);
     const stockCost = list.reduce((sum, p) => sum + p.stock * p.cost_price, 0);
@@ -85,7 +86,7 @@ function Painel() {
       const entry = byDay.get(s.sold_at);
       if (!entry) continue;
       entry.receita += s.quantity * s.unit_price;
-      entry.lucro += s.quantity * (s.unit_price - s.unit_cost);
+      entry.lucro += s.quantity * (s.unit_price - s.unit_cost) - s.extra_expense;
     }
 
     const projectedProfit = stockRevenue - stockCost - stockExtraCost;
@@ -121,7 +122,7 @@ function Painel() {
       const entry = channelMap.get(key) ?? { count: 0, revenue: 0, profit: 0 };
       entry.count += 1;
       entry.revenue += s.quantity * s.unit_price;
-      entry.profit += s.quantity * (s.unit_price - s.unit_cost);
+      entry.profit += s.quantity * (s.unit_price - s.unit_cost) - s.extra_expense;
       channelMap.set(key, entry);
     }
     const channelStats = [...channelMap.entries()]
@@ -130,8 +131,8 @@ function Painel() {
 
     return {
       revenue,
-      profit: revenue - cogs,
-      margin: revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0,
+      profit: revenue - cogs - extraExpenses,
+      margin: revenue > 0 ? ((revenue - cogs - extraExpenses) / revenue) * 100 : 0,
       spent,
       salesCount: periodSales.length,
       stockUnits,

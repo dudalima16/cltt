@@ -28,6 +28,7 @@ export type Database = {
           sale_price: number
           sku: string | null
           stock: number
+          registered_at: string
           updated_at: string
           user_id: string
         }
@@ -44,6 +45,7 @@ export type Database = {
           sale_price?: number
           sku?: string | null
           stock?: number
+          registered_at?: string
           updated_at?: string
           user_id: string
         }
@@ -60,6 +62,7 @@ export type Database = {
           sale_price?: number
           sku?: string | null
           stock?: number
+          registered_at?: string
           updated_at?: string
           user_id?: string
         }
@@ -110,6 +113,8 @@ export type Database = {
         Row: {
           channel: string | null
           created_at: string
+          discount: number
+          extra_expense: number
           id: string
           notes: string | null
           product_id: string
@@ -122,6 +127,8 @@ export type Database = {
         Insert: {
           channel?: string | null
           created_at?: string
+          discount?: number
+          extra_expense?: number
           id?: string
           notes?: string | null
           product_id: string
@@ -134,6 +141,8 @@ export type Database = {
         Update: {
           channel?: string | null
           created_at?: string
+          discount?: number
+          extra_expense?: number
           id?: string
           notes?: string | null
           product_id?: string

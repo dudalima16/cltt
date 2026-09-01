@@ -13,6 +13,7 @@ export type Product = {
   extra_charge: number;
   stock: number;
   min_stock: number;
+  registered_at: string;
   notes: string | null;
   created_at: string;
 };
@@ -32,6 +33,8 @@ export type Sale = {
   quantity: number;
   unit_price: number;
   unit_cost: number;
+  discount: number;
+  extra_expense: number;
   sold_at: string;
   channel: string | null;
   notes: string | null;
@@ -99,7 +102,14 @@ export function useSales() {
         .order("sold_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map(
-        (r) => num(r, ["quantity", "unit_price", "unit_cost"]) as unknown as Sale,
+        (r) =>
+          num(r, [
+            "quantity",
+            "unit_price",
+            "unit_cost",
+            "discount",
+            "extra_expense",
+          ]) as unknown as Sale,
       );
     },
   });
@@ -124,6 +134,7 @@ export type ProductInput = {
   extra_charge: number;
   stock: number;
   min_stock: number;
+  registered_at: string;
 };
 
 export function useSaveProduct() {
@@ -232,12 +243,43 @@ export function useCreateSale() {
       quantity: number;
       unit_price: number;
       unit_cost: number;
+      discount: number;
+      extra_expense: number;
       sold_at: string;
       channel: string | null;
       notes: string | null;
     }) => {
       const user_id = await currentUserId();
       const { error } = await supabase.from("sales").insert({ ...values, user_id });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateSale() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: {
+        product_id: string;
+        quantity: number;
+        unit_price: number;
+        unit_cost: number;
+        discount: number;
+        extra_expense: number;
+        sold_at: string;
+        channel: string | null;
+        notes: string | null;
+      };
+    }) => {
+      // A alteração de quantidade/produto é tratada pelo próprio gatilho no
+      // banco (ele ajusta o estoque comparando o valor antigo com o novo).
+      const { error } = await supabase.from("sales").update(values).eq("id", id);
       if (error) throw error;
     },
     onSuccess: invalidate,
