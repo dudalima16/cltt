@@ -263,19 +263,44 @@ export function useUpdatePurchaseRefund() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: async ({
-      id,
+      purchase,
       refund_deadline,
       refund_status,
     }: {
-      id: string;
+      purchase: Purchase;
       refund_deadline: string | null;
       refund_status: Purchase["refund_status"];
     }) => {
       const { error } = await supabase
         .from("purchases")
         .update({ refund_deadline, refund_status })
-        .eq("id", id);
+        .eq("id", purchase.id);
       if (error) throw error;
+
+      // Quando o status muda PRA "reembolsado", o produto voltou pro
+      // fornecedor: tira do estoque e o dinheiro deixa de contar como
+      // investido (Painel e Relatórios recalculam sozinhos a partir do
+      // estoque atual). Se você desfizer o reembolso, devolve a quantidade.
+      const wasRefunded = purchase.refund_status === "reembolsado";
+      const isRefunded = refund_status === "reembolsado";
+      if (wasRefunded === isRefunded) return;
+
+      const { data: product, error: fetchError } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", purchase.product_id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const newStock = isRefunded
+        ? Math.max(product.stock - purchase.quantity, 0)
+        : product.stock + purchase.quantity;
+
+      const { error: stockError } = await supabase
+        .from("products")
+        .update({ stock: newStock })
+        .eq("id", purchase.product_id);
+      if (stockError) throw stockError;
     },
     onSuccess: invalidate,
   });

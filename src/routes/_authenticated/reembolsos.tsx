@@ -69,10 +69,15 @@ function Reembolsos() {
   ) {
     try {
       await updateRefund.mutateAsync({
-        id: p.id,
+        purchase: p,
         refund_deadline: patch.refund_deadline ?? p.refund_deadline,
         refund_status: patch.refund_status ?? p.refund_status,
       });
+      if (patch.refund_status === "reembolsado") {
+        toast.success("Estoque e investimento atualizados — esse valor não conta mais.");
+      } else if (patch.refund_status && p.refund_status === "reembolsado") {
+        toast.success("Reembolso desfeito — estoque devolvido.");
+      }
     } catch (err) {
       toast.error(errorMessage(err, "Erro ao atualizar."));
     }
@@ -170,6 +175,11 @@ function Reembolsos() {
                           <option value="solicitado">Solicitado</option>
                           <option value="reembolsado">Reembolsado</option>
                         </select>
+                        {p.refund_status === "reembolsado" && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Estoque e investimento já debitados
+                          </p>
+                        )}
                       </td>
                     </tr>
                   );

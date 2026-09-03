@@ -42,7 +42,11 @@ function Relatorios() {
     const allSales = sales.data ?? [];
     const allPurchases = purchases.data ?? [];
 
-    const invested = allPurchases.reduce((s, p) => s + p.quantity * p.unit_cost, 0);
+    // Compra reembolsada não conta mais como dinheiro investido — o valor
+    // voltou pro seu bolso.
+    const invested = allPurchases
+      .filter((p) => p.refund_status !== "reembolsado")
+      .reduce((s, p) => s + p.quantity * p.unit_cost, 0);
     const revenue = allSales.reduce((s, v) => s + v.quantity * v.unit_price, 0);
     const profit = allSales.reduce(
       (s, v) => s + v.quantity * (v.unit_price - v.unit_cost) - v.extra_expense,
