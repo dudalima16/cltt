@@ -26,6 +26,22 @@ CREATE TABLE public.purchases (
   quantity integer NOT NULL CHECK (quantity > 0),
   unit_cost numeric(12,2) NOT NULL DEFAULT 0,
   purchased_at date NOT NULL DEFAULT current_date,
+  refund_deadline date,
+  refund_status text NOT NULL DEFAULT 'nao_solicitado'
+    CHECK (refund_status IN ('nao_solicitado', 'solicitado', 'reembolsado')),
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.product_research (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  source text,
+  estimated_cost numeric(12,2) NOT NULL DEFAULT 0,
+  estimated_price numeric(12,2) NOT NULL DEFAULT 0,
+  status text NOT NULL DEFAULT 'testando'
+    CHECK (status IN ('testando', 'aprovado', 'reprovado')),
   notes text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -51,16 +67,21 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.purchases TO authenticated;
 GRANT ALL ON public.purchases TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales TO authenticated;
 GRANT ALL ON public.sales TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.product_research TO authenticated;
+GRANT ALL ON public.product_research TO service_role;
 
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.purchases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_research ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "own products" ON public.products FOR ALL TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "own purchases" ON public.purchases FOR ALL TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "own sales" ON public.sales FOR ALL TO authenticated
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "own product_research" ON public.product_research FOR ALL TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 CREATE INDEX idx_products_user ON public.products(user_id);

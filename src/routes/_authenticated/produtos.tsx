@@ -43,6 +43,7 @@ const empty = {
   extra_charge: "",
   stock: "0",
   registered_at: today(),
+  return_days: "7",
 };
 
 function Produtos() {
@@ -75,6 +76,7 @@ function Produtos() {
       extra_charge: String(p.extra_charge),
       stock: String(p.stock),
       registered_at: p.registered_at,
+      return_days: "7",
     });
     setOpen(true);
   }
@@ -87,9 +89,12 @@ function Produtos() {
       return;
     }
     try {
+      const stockValue = Math.max(Math.trunc(Number(form.stock) || 0), 0);
+      const isBuying = !editing || stockValue > editing.stock;
       await save.mutateAsync({
         id: editing?.id,
         previousStock: editing?.stock,
+        returnWindowDays: isBuying ? Number(form.return_days) || null : null,
         values: {
           name: name.slice(0, 120),
           sku: null,
@@ -98,7 +103,7 @@ function Produtos() {
           extra_cost: Number(form.extra_cost.replace(",", ".")) || 0,
           sale_price: Number(form.sale_price.replace(",", ".")) || 0,
           extra_charge: Number(form.extra_charge.replace(",", ".")) || 0,
-          stock: Math.max(Math.trunc(Number(form.stock) || 0), 0),
+          stock: stockValue,
           min_stock: 0,
           registered_at: form.registered_at || today(),
         },
@@ -298,6 +303,24 @@ function Produtos() {
                     : "Quantidade que você já tem. Isso conta como investimento automaticamente nos Relatórios."}
                 </p>
               </div>
+              {(!editing || Number(form.stock) > editing.stock) && (
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="return_days">Prazo pra devolução (dias)</Label>
+                  <Input
+                    id="return_days"
+                    inputMode="numeric"
+                    value={form.return_days}
+                    onChange={(e) => setForm({ ...form, return_days: e.target.value })}
+                    placeholder="Ex.: 7"
+                    className="max-w-[8rem]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Normalmente é 7 dias, mas ajuste pro prazo real do seu fornecedor. Deixe
+                    em branco se essa compra não tem devolução. Acompanhe os prazos na aba
+                    "Reembolsos".
+                  </p>
+                </div>
+              )}
               <div className="col-span-2 space-y-2">
                 <Label>Data de cadastro</Label>
                 <Input

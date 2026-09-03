@@ -76,6 +76,8 @@ export type Database = {
           product_id: string
           purchased_at: string
           quantity: number
+          refund_deadline: string | null
+          refund_status: string
           unit_cost: number
           user_id: string
         }
@@ -86,6 +88,8 @@ export type Database = {
           product_id: string
           purchased_at?: string
           quantity: number
+          refund_deadline?: string | null
+          refund_status?: string
           unit_cost?: number
           user_id: string
         }
@@ -96,6 +100,8 @@ export type Database = {
           product_id?: string
           purchased_at?: string
           quantity?: number
+          refund_deadline?: string | null
+          refund_status?: string
           unit_cost?: number
           user_id?: string
         }
@@ -161,6 +167,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_research: {
+        Row: {
+          created_at: string
+          estimated_cost: number
+          estimated_price: number
+          id: string
+          name: string
+          notes: string | null
+          source: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_cost?: number
+          estimated_price?: number
+          id?: string
+          name: string
+          notes?: string | null
+          source?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estimated_cost?: number
+          estimated_price?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          source?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

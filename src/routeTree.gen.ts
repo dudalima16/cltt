@@ -16,6 +16,8 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedCalculadoraRouteImport } from './routes/_authenticated/calculadora'
+import { Route as AuthenticatedMineracaoRouteImport } from './routes/_authenticated/mineracao'
+import { Route as AuthenticatedReembolsosRouteImport } from './routes/_authenticated/reembolsos'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
@@ -65,6 +67,16 @@ const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMineracaoRoute = AuthenticatedMineracaoRouteImport.update({
+  id: '/mineracao',
+  path: '/mineracao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReembolsosRoute = AuthenticatedReembolsosRouteImport.update({
+  id: '/reembolsos',
+  path: '/reembolsos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -100,6 +112,8 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calculadora': typeof AuthenticatedCalculadoraRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/mineracao': typeof AuthenticatedMineracaoRoute
+  '/reembolsos': typeof AuthenticatedReembolsosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/vendas': typeof AuthenticatedVendasRoute
@@ -114,6 +128,8 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calculadora': typeof AuthenticatedCalculadoraRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/mineracao': typeof AuthenticatedMineracaoRoute
+  '/reembolsos': typeof AuthenticatedReembolsosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/vendas': typeof AuthenticatedVendasRoute
@@ -130,6 +146,8 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/calculadora': typeof AuthenticatedCalculadoraRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/mineracao': typeof AuthenticatedMineracaoRoute
+  '/_authenticated/reembolsos': typeof AuthenticatedReembolsosRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/vendas': typeof AuthenticatedVendasRoute
@@ -146,6 +164,8 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/calculadora'
     | '/painel'
+    | '/mineracao'
+    | '/reembolsos'
     | '/produtos'
     | '/relatorios'
     | '/vendas'
@@ -160,6 +180,8 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/calculadora'
     | '/painel'
+    | '/mineracao'
+    | '/reembolsos'
     | '/produtos'
     | '/relatorios'
     | '/vendas'
@@ -175,6 +197,8 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/calculadora'
     | '/_authenticated/painel'
+    | '/_authenticated/mineracao'
+    | '/_authenticated/reembolsos'
     | '/_authenticated/produtos'
     | '/_authenticated/relatorios'
     | '/_authenticated/vendas'
@@ -251,6 +275,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mineracao': {
+      id: '/_authenticated/mineracao'
+      path: '/mineracao'
+      fullPath: '/mineracao'
+      preLoaderRoute: typeof AuthenticatedMineracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reembolsos': {
+      id: '/_authenticated/reembolsos'
+      path: '/reembolsos'
+      fullPath: '/reembolsos'
+      preLoaderRoute: typeof AuthenticatedReembolsosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mineracao': {
+      id: '/_authenticated/mineracao'
+      path: '/mineracao'
+      fullPath: '/mineracao'
+      preLoaderRoute: typeof AuthenticatedMineracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reembolsos': {
+      id: '/_authenticated/reembolsos'
+      path: '/reembolsos'
+      fullPath: '/reembolsos'
+      preLoaderRoute: typeof AuthenticatedReembolsosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/produtos': {
       id: '/_authenticated/produtos'
       path: '/produtos'
@@ -292,6 +344,8 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalculadoraRoute: typeof AuthenticatedCalculadoraRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedMineracaoRoute: typeof AuthenticatedMineracaoRoute
+  AuthenticatedReembolsosRoute: typeof AuthenticatedReembolsosRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedVendasRoute: typeof AuthenticatedVendasRoute
@@ -300,6 +354,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalculadoraRoute: AuthenticatedCalculadoraRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedMineracaoRoute: AuthenticatedMineracaoRoute,
+  AuthenticatedReembolsosRoute: AuthenticatedReembolsosRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedVendasRoute: AuthenticatedVendasRoute,
