@@ -21,23 +21,21 @@ export const Route = createFileRoute("/_authenticated/reembolsos")({
 
 const tabs = [
   { key: "pendentes", label: "Pendentes" },
-  { key: "solicitado", label: "Solicitados" },
   { key: "reembolsado", label: "Reembolsados" },
-  { key: "all", label: "Todos" },
 ] as const;
 
 function urgency(p: Purchase): { label: string; tone: "destructive" | "warning" | "muted" } {
-  if (p.refund_status !== "nao_solicitado" || !p.refund_deadline) {
+  if (p.refund_status === "reembolsado" || !p.refund_deadline) {
     return { label: "", tone: "muted" };
   }
   const days = Math.ceil(
     (new Date(`${p.refund_deadline}T12:00:00`).getTime() - new Date(`${today()}T12:00:00`).getTime()) /
       86_400_000,
   );
-  if (days < 0) return { label: "Prazo vencido", tone: "destructive" };
-  if (days === 0) return { label: "Vence hoje", tone: "warning" };
-  if (days <= 2) return { label: `Vence em ${days}d`, tone: "warning" };
-  return { label: `Vence em ${days}d`, tone: "muted" };
+  if (days < 0) return { label: `Prazo vencido há ${Math.abs(days)}d`, tone: "destructive" };
+  if (days === 0) return { label: "Último dia pra reembolso", tone: "warning" };
+  if (days <= 2) return { label: `Faltam ${days}d pra reembolso`, tone: "warning" };
+  return { label: `Faltam ${days}d pra reembolso`, tone: "muted" };
 }
 
 function Reembolsos() {
@@ -51,11 +49,9 @@ function Reembolsos() {
   const list = useMemo(() => {
     const all = purchases.data ?? [];
     const filtered =
-      tab === "all"
-        ? all
-        : tab === "pendentes"
-          ? all.filter((p) => p.refund_status === "nao_solicitado")
-          : all.filter((p) => p.refund_status === tab);
+      tab === "reembolsado"
+        ? all.filter((p) => p.refund_status === "reembolsado")
+        : all.filter((p) => p.refund_status !== "reembolsado");
     return [...filtered].sort((a, b) => {
       if (!a.refund_deadline) return 1;
       if (!b.refund_deadline) return -1;
@@ -63,21 +59,26 @@ function Reembolsos() {
     });
   }, [purchases.data, tab]);
 
-  async function updateField(
-    p: Purchase,
-    patch: Partial<Pick<Purchase, "refund_deadline" | "refund_status">>,
-  ) {
+  async function toggleRefunded(p: Purchase, refunded: boolean) {
     try {
       await updateRefund.mutateAsync({
         purchase: p,
-        refund_deadline: patch.refund_deadline ?? p.refund_deadline,
-        refund_status: patch.refund_status ?? p.refund_status,
+        refund_deadline: p.refund_deadline,
+        refund_status: refunded ? "reembolsado" : "nao_solicitado",
       });
-      if (patch.refund_status === "reembolsado") {
-        toast.success("Estoque e investimento atualizados — esse valor não conta mais.");
-      } else if (patch.refund_status && p.refund_status === "reembolsado") {
-        toast.success("Reembolso desfeito — estoque devolvido.");
-      }
+      toast.success(
+        refunded
+          ? "Estoque e investimento atualizados — esse valor não conta mais."
+          : "Reembolso desfeito — estoque devolvido.",
+      );
+    } catch (err) {
+      toast.error(errorMessage(err, "Erro ao atualizar."));
+    }
+  }
+
+  async function updateDeadline(p: Purchase, refund_deadline: string) {
+    try {
+      await updateRefund.mutateAsync({ purchase: p, refund_deadline, refund_status: p.refund_status });
     } catch (err) {
       toast.error(errorMessage(err, "Erro ao atualizar."));
     }
@@ -123,7 +124,7 @@ function Reembolsos() {
                   <th className="px-4 py-3 font-medium">Comprado em</th>
                   <th className="px-4 py-3 font-medium">Valor</th>
                   <th className="px-4 py-3 font-medium">Prazo pra devolver</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Reembolsado</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,39 +143,38 @@ function Reembolsos() {
                         {brl(p.quantity * p.unit_cost)}
                       </td>
                       <td className="px-4 py-3">
-                        <input
-                          type="date"
-                          value={p.refund_deadline ?? ""}
-                          onChange={(e) => updateField(p, { refund_deadline: e.target.value })}
-                          className="rounded-md border border-border bg-secondary/40 px-2 py-1 text-sm"
-                        />
-                        {u.label && (
-                          <p
-                            className={cn(
-                              "mt-1 text-xs font-medium",
-                              u.tone === "destructive" && "text-destructive",
-                              u.tone === "warning" && "text-warning",
-                              u.tone === "muted" && "text-muted-foreground",
-                            )}
-                          >
-                            {u.label}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="date"
+                            value={p.refund_deadline ?? ""}
+                            onChange={(e) => updateDeadline(p, e.target.value)}
+                            disabled={p.refund_status === "reembolsado"}
+                            className="rounded-md border border-border bg-secondary/40 px-2 py-1 text-sm disabled:opacity-50"
+                          />
+                          {u.label && (
+                            <span
+                              className={cn(
+                                "text-sm font-semibold",
+                                u.tone === "destructive" && "text-destructive",
+                                u.tone === "warning" && "text-warning",
+                                u.tone === "muted" && "text-muted-foreground",
+                              )}
+                            >
+                              {u.label}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
-                        <select
-                          value={p.refund_status}
-                          onChange={(e) =>
-                            updateField(p, {
-                              refund_status: e.target.value as Purchase["refund_status"],
-                            })
-                          }
-                          className="rounded-md border border-border bg-secondary/40 px-2 py-1 text-sm"
-                        >
-                          <option value="nao_solicitado">Não solicitado</option>
-                          <option value="solicitado">Solicitado</option>
-                          <option value="reembolsado">Reembolsado</option>
-                        </select>
+                        <label className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={p.refund_status === "reembolsado"}
+                            onChange={(e) => toggleRefunded(p, e.target.checked)}
+                            className="size-4 rounded border-input"
+                          />
+                          {p.refund_status === "reembolsado" ? "Sim" : "Não"}
+                        </label>
                         {p.refund_status === "reembolsado" && (
                           <p className="mt-1 text-xs text-muted-foreground">
                             Estoque e investimento já debitados
