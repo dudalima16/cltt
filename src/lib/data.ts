@@ -48,6 +48,10 @@ export type ProductResearch = {
   source: string | null;
   estimated_cost: number;
   estimated_price: number;
+  marketplace_fee_pct: number;
+  marketplace_fixed_fee: number;
+  tax_pct: number;
+  ads_cost: number;
   status: "testando" | "aprovado" | "reprovado";
   notes: string | null;
   created_at: string;
@@ -367,7 +371,15 @@ export function useProductResearch() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map(
-        (r) => num(r, ["estimated_cost", "estimated_price"]) as unknown as ProductResearch,
+        (r) =>
+          num(r, [
+            "estimated_cost",
+            "estimated_price",
+            "marketplace_fee_pct",
+            "marketplace_fixed_fee",
+            "tax_pct",
+            "ads_cost",
+          ]) as unknown as ProductResearch,
       );
     },
   });
@@ -378,6 +390,10 @@ export type ProductResearchInput = {
   source: string | null;
   estimated_cost: number;
   estimated_price: number;
+  marketplace_fee_pct: number;
+  marketplace_fixed_fee: number;
+  tax_pct: number;
+  ads_cost: number;
   notes: string | null;
 };
 

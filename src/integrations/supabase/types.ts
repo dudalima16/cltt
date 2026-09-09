@@ -170,36 +170,48 @@ export type Database = {
       }
       product_research: {
         Row: {
+          ads_cost: number
           created_at: string
           estimated_cost: number
           estimated_price: number
           id: string
+          marketplace_fee_pct: number
+          marketplace_fixed_fee: number
           name: string
           notes: string | null
           source: string | null
           status: string
+          tax_pct: number
           user_id: string
         }
         Insert: {
+          ads_cost?: number
           created_at?: string
           estimated_cost?: number
           estimated_price?: number
           id?: string
+          marketplace_fee_pct?: number
+          marketplace_fixed_fee?: number
           name: string
           notes?: string | null
           source?: string | null
           status?: string
+          tax_pct?: number
           user_id: string
         }
         Update: {
+          ads_cost?: number
           created_at?: string
           estimated_cost?: number
           estimated_price?: number
           id?: string
+          marketplace_fee_pct?: number
+          marketplace_fixed_fee?: number
           name?: string
           notes?: string | null
           source?: string | null
           status?: string
+          tax_pct?: number
           user_id?: string
         }
         Relationships: []
