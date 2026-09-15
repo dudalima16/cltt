@@ -67,6 +67,7 @@ function Painel() {
 
     const revenue = periodSales.reduce((sum, s) => sum + s.quantity * s.unit_price, 0);
     const cogs = periodSales.reduce((sum, s) => sum + s.quantity * s.unit_cost, 0);
+    const extraExpenses = periodSales.reduce((sum, s) => sum + s.extra_expense, 0);
     const spent = periodPurchases.reduce((sum, p) => sum + p.quantity * p.unit_cost, 0);
     const stockUnits = list.reduce((sum, p) => sum + p.stock, 0);
     const stockCost = list.reduce((sum, p) => sum + p.stock * p.cost_price, 0);
@@ -85,7 +86,7 @@ function Painel() {
       const entry = byDay.get(s.sold_at);
       if (!entry) continue;
       entry.receita += s.quantity * s.unit_price;
-      entry.lucro += s.quantity * (s.unit_price - s.unit_cost);
+      entry.lucro += s.quantity * (s.unit_price - s.unit_cost) - s.extra_expense;
     }
 
     const projectedProfit = stockRevenue - stockCost - stockExtraCost;
@@ -95,15 +96,26 @@ function Painel() {
     // que dá — ou seja, o que mais vale a pena comprar de novo primeiro.
     const lookbackFrom = daysAgo(RESTOCK_LOOKBACK_DAYS);
     const recentSoldByProduct = new Map<string, number>();
+    const totalSoldByProduct = new Map<string, number>();
     for (const s of sales.data ?? []) {
+      totalSoldByProduct.set(s.product_id, (totalSoldByProduct.get(s.product_id) ?? 0) + s.quantity);
       if (s.sold_at < lookbackFrom) continue;
       recentSoldByProduct.set(
         s.product_id,
         (recentSoldByProduct.get(s.product_id) ?? 0) + s.quantity,
       );
     }
+    // Produto que foi reembolsado e nunca vendeu nada de verdade: o estoque
+    // zerado é por causa do reembolso, não porque "esgotou" — não faz
+    // sentido sugerir comprar de novo.
+    const refundedProductIds = new Set(
+      (purchases.data ?? [])
+        .filter((pu) => pu.refund_status === "reembolsado")
+        .map((pu) => pu.product_id),
+    );
     const restockSuggestions = list
       .filter((p) => p.stock <= p.min_stock)
+      .filter((p) => !refundedProductIds.has(p.id) || (totalSoldByProduct.get(p.id) ?? 0) > 0)
       .map((p) => {
         const sold = recentSoldByProduct.get(p.id) ?? 0;
         const margin = p.sale_price + p.extra_charge - p.cost_price - p.extra_cost;
@@ -121,7 +133,7 @@ function Painel() {
       const entry = channelMap.get(key) ?? { count: 0, revenue: 0, profit: 0 };
       entry.count += 1;
       entry.revenue += s.quantity * s.unit_price;
-      entry.profit += s.quantity * (s.unit_price - s.unit_cost);
+      entry.profit += s.quantity * (s.unit_price - s.unit_cost) - s.extra_expense;
       channelMap.set(key, entry);
     }
     const channelStats = [...channelMap.entries()]
@@ -130,8 +142,8 @@ function Painel() {
 
     return {
       revenue,
-      profit: revenue - cogs,
-      margin: revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0,
+      profit: revenue - cogs - extraExpenses,
+      margin: revenue > 0 ? ((revenue - cogs - extraExpenses) / revenue) * 100 : 0,
       spent,
       salesCount: periodSales.length,
       stockUnits,

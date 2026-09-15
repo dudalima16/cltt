@@ -37,6 +37,12 @@ export const daysAgo = (days: number) => {
   return toLocalISODate(d);
 };
 
+export const addDays = (isoDate: string, days: number) => {
+  const d = new Date(`${isoDate}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  return toLocalISODate(d);
+};
+
 // Erros do Supabase nem sempre são instâncias de Error (dependendo da
 // versão, vêm como objeto plano { message, code, ... }). Isso extrai a
 // mensagem real de qualquer um dos dois formatos, em vez de cair sempre

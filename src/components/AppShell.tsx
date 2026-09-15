@@ -7,6 +7,8 @@ import {
   ShoppingCart,
   BarChart3,
   Calculator,
+  FlaskConical,
+  RotateCcw,
   LogOut,
   Menu,
   X,
@@ -18,7 +20,9 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/painel", label: "Painel", icon: LayoutGrid },
   { to: "/produtos", label: "Produtos", icon: Package },
+  { to: "/mineracao", label: "Mineração de Produto", icon: FlaskConical },
   { to: "/vendas", label: "Vendas", icon: ShoppingCart },
+  { to: "/reembolsos", label: "Reembolsos", icon: RotateCcw },
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/calculadora", label: "Calculadora de Margem", icon: Calculator },
 ] as const;

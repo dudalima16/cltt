@@ -56,6 +56,8 @@ function Vendas() {
     unit_price: "",
     unit_cost: "",
     discount: "0",
+    hasExtraExpense: false,
+    extra_expense: "",
     sold_at: today(),
     channel: "",
     notes: "",
@@ -65,7 +67,7 @@ function Vendas() {
   const names = new Map((products.data ?? []).map((p) => [p.id, p.name]));
   const revenue = (sales.data ?? []).reduce((s, v) => s + v.quantity * v.unit_price, 0);
   const profit = (sales.data ?? []).reduce(
-    (s, v) => s + v.quantity * (v.unit_price - v.unit_cost),
+    (s, v) => s + v.quantity * (v.unit_price - v.unit_cost) - v.extra_expense,
     0,
   );
 
@@ -95,6 +97,8 @@ function Vendas() {
       unit_price: "",
       unit_cost: "",
       discount: "0",
+      hasExtraExpense: false,
+      extra_expense: "",
       sold_at: today(),
       channel: "",
       notes: "",
@@ -111,6 +115,8 @@ function Vendas() {
       unit_price: String(s.unit_price),
       unit_cost: String(s.unit_cost),
       discount: String(s.discount),
+      hasExtraExpense: s.extra_expense > 0,
+      extra_expense: s.extra_expense > 0 ? String(s.extra_expense) : "",
       sold_at: s.sold_at,
       channel: s.channel ?? "",
       notes: s.notes ?? "",
@@ -135,6 +141,9 @@ function Vendas() {
       unit_price: Number(form.unit_price.replace(",", ".")) || 0,
       unit_cost: Number(form.unit_cost.replace(",", ".")) || 0,
       discount: Math.max(Number(form.discount.replace(",", ".")) || 0, 0),
+      extra_expense: form.hasExtraExpense
+        ? Math.max(Number(form.extra_expense.replace(",", ".")) || 0, 0)
+        : 0,
       sold_at: form.sold_at,
       channel: form.channel.trim().slice(0, 60) || null,
       notes: form.notes.trim().slice(0, 200) || null,
@@ -190,7 +199,7 @@ function Vendas() {
               </thead>
               <tbody>
                 {(sales.data ?? []).map((s) => {
-                  const p = s.quantity * (s.unit_price - s.unit_cost);
+                  const p = s.quantity * (s.unit_price - s.unit_cost) - s.extra_expense;
                   const product = productMap.get(s.product_id);
                   const daysToSell = product
                     ? Math.round(
@@ -219,6 +228,11 @@ function Vendas() {
                         <span className={p >= 0 ? "text-success" : "text-destructive"}>
                           {brl(p)}
                         </span>
+                        {s.extra_expense > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            −{brl(s.extra_expense)} entrega/gasolina
+                          </p>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {daysToSell !== null && daysToSell >= 0 ? `${int(daysToSell)} dia(s)` : "—"}
@@ -344,6 +358,39 @@ function Vendas() {
                   onChange={(e) => setForm({ ...form, sold_at: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="space-y-2 rounded-lg border border-border p-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.hasExtraExpense}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      hasExtraExpense: e.target.checked,
+                      extra_expense: e.target.checked ? form.extra_expense : "",
+                    })
+                  }
+                  className="size-4 rounded border-input"
+                />
+                Tive outro gasto nessa venda (entrega, gasolina…)
+                {form.hasExtraExpense && (
+                  <Input
+                    inputMode="decimal"
+                    autoFocus
+                    value={form.extra_expense}
+                    onChange={(e) => setForm({ ...form, extra_expense: e.target.value })}
+                    placeholder="Valor (R$)"
+                    className="ml-auto h-8 w-28"
+                  />
+                )}
+              </label>
+              {form.hasExtraExpense && (
+                <p className="text-xs text-muted-foreground">
+                  Esse valor abate do lucro dessa venda — é dinheiro que realmente saiu do
+                  seu bolso.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Canal</Label>

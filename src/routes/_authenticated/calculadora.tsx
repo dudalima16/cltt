@@ -25,13 +25,20 @@ export const Route = createFileRoute("/_authenticated/calculadora")({
 });
 
 // Referência de mercado (2026) — comissão % e custo fixo por unidade.
-// Muda por categoria e pode ser atualizada pelas plataformas a qualquer
-// momento; o usuário deve conferir o valor exato no painel de vendedor.
+// Comissão do Mercado Livre varia dentro da faixa por categoria; abaixo de
+// R$79 a taxa fixa depende de peso/dimensão (aqui é uma média). Muda a
+// qualquer momento — confira o valor exato no seu anúncio antes de decidir.
 const marketplacePresets = [
-  { label: "Mercado Livre · Clássico", feePct: 12, fixedFee: 6.5 },
-  { label: "Mercado Livre · Premium", feePct: 17, fixedFee: 6.5 },
-  { label: "TikTok Shop · produto < R$50", feePct: 10, fixedFee: 6 },
-  { label: "TikTok Shop · produto ≥ R$50", feePct: 6, fixedFee: 6 },
+  { label: "ML Clássico · até R$79", feePct: 12, fixedFee: 6 },
+  { label: "ML Clássico · R$79+", feePct: 12, fixedFee: 0 },
+  { label: "ML Premium · até R$79", feePct: 17, fixedFee: 6 },
+  { label: "ML Premium · R$79+", feePct: 17, fixedFee: 0 },
+  { label: "Shopee · até R$79", feePct: 20, fixedFee: 4 },
+  { label: "Shopee · R$80–99", feePct: 14, fixedFee: 16 },
+  { label: "Shopee · R$100–199", feePct: 14, fixedFee: 20 },
+  { label: "Shopee · R$200+", feePct: 14, fixedFee: 26 },
+  { label: "TikTok Shop · até R$50", feePct: 10, fixedFee: 4 },
+  { label: "TikTok Shop · R$50+", feePct: 6, fixedFee: 6 },
 ];
 
 function Calculadora() {
@@ -113,6 +120,10 @@ function Calculadora() {
             <p className="text-xs text-muted-foreground">
               Valores de referência (2026) — a comissão exata varia por categoria. Confira o
               percentual certo no painel de vendedor de cada plataforma antes de precificar.
+              No TikTok Shop, todo vendedor no Brasil já entra automaticamente no Programa
+              de Taxa de Envio — mais 6% do preço (até R$50 por item) some do repasse, não é
+              opcional. Se você é vendedor novo lá, pode ter isenção de comissão por 60 dias
+              (até R$17.000 em vendas) — confira na Central do Vendedor.
             </p>
           </div>
 

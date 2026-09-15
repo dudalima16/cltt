@@ -76,6 +76,8 @@ export type Database = {
           product_id: string
           purchased_at: string
           quantity: number
+          refund_deadline: string | null
+          refund_status: string
           unit_cost: number
           user_id: string
         }
@@ -86,6 +88,8 @@ export type Database = {
           product_id: string
           purchased_at?: string
           quantity: number
+          refund_deadline?: string | null
+          refund_status?: string
           unit_cost?: number
           user_id: string
         }
@@ -96,6 +100,8 @@ export type Database = {
           product_id?: string
           purchased_at?: string
           quantity?: number
+          refund_deadline?: string | null
+          refund_status?: string
           unit_cost?: number
           user_id?: string
         }
@@ -114,6 +120,7 @@ export type Database = {
           channel: string | null
           created_at: string
           discount: number
+          extra_expense: number
           id: string
           notes: string | null
           product_id: string
@@ -127,6 +134,7 @@ export type Database = {
           channel?: string | null
           created_at?: string
           discount?: number
+          extra_expense?: number
           id?: string
           notes?: string | null
           product_id: string
@@ -140,6 +148,7 @@ export type Database = {
           channel?: string | null
           created_at?: string
           discount?: number
+          extra_expense?: number
           id?: string
           notes?: string | null
           product_id?: string
@@ -158,6 +167,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_research: {
+        Row: {
+          ads_cost: number
+          created_at: string
+          estimated_cost: number
+          estimated_price: number
+          extra_costs: Json
+          id: string
+          marketplace_fee_pct: number
+          marketplace_fixed_fee: number
+          name: string
+          notes: string | null
+          source: string | null
+          status: string
+          tax_pct: number
+          user_id: string
+        }
+        Insert: {
+          ads_cost?: number
+          created_at?: string
+          estimated_cost?: number
+          estimated_price?: number
+          extra_costs?: Json
+          id?: string
+          marketplace_fee_pct?: number
+          marketplace_fixed_fee?: number
+          name: string
+          notes?: string | null
+          source?: string | null
+          status?: string
+          tax_pct?: number
+          user_id: string
+        }
+        Update: {
+          ads_cost?: number
+          created_at?: string
+          estimated_cost?: number
+          estimated_price?: number
+          extra_costs?: Json
+          id?: string
+          marketplace_fee_pct?: number
+          marketplace_fixed_fee?: number
+          name?: string
+          notes?: string | null
+          source?: string | null
+          status?: string
+          tax_pct?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      marketplace_profiles: {
+        Row: {
+          created_at: string
+          fee_pct: number
+          fixed_fee: number
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fee_pct?: number
+          fixed_fee?: number
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fee_pct?: number
+          fixed_fee?: number
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

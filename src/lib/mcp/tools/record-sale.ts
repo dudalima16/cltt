@@ -21,6 +21,16 @@ export default defineTool({
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
       .describe("Data da venda (AAAA-MM-DD). Padrão: hoje."),
+    discount: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("Desconto aplicado nessa venda, só pra registro (padrão 0)."),
+    extra_expense: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("Gasto extra na venda, ex.: entrega ou gasolina — abate do lucro (padrão 0)."),
     channel: z.string().trim().optional().describe("Canal de venda (ex.: Instagram, Shopee)."),
     notes: z.string().trim().optional(),
   },
@@ -51,6 +61,8 @@ export default defineTool({
         unit_price: input.unit_price,
         unit_cost: unitCost,
         sold_at: input.sold_at ?? new Date().toISOString().slice(0, 10),
+        discount: input.discount ?? 0,
+        extra_expense: input.extra_expense ?? 0,
         channel: input.channel ?? null,
         notes: input.notes ?? null,
       })

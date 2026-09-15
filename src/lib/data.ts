@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { today } from "@/lib/format";
+import { addDays, today } from "@/lib/format";
 
 export type Product = {
   id: string;
@@ -24,6 +24,8 @@ export type Purchase = {
   quantity: number;
   unit_cost: number;
   purchased_at: string;
+  refund_deadline: string | null;
+  refund_status: "nao_solicitado" | "solicitado" | "reembolsado";
   notes: string | null;
 };
 
@@ -34,9 +36,36 @@ export type Sale = {
   unit_price: number;
   unit_cost: number;
   discount: number;
+  extra_expense: number;
   sold_at: string;
   channel: string | null;
   notes: string | null;
+};
+
+export type ExtraCost = { label: string; value: number };
+
+export type ProductResearch = {
+  id: string;
+  name: string;
+  source: string | null;
+  estimated_cost: number;
+  estimated_price: number;
+  marketplace_fee_pct: number;
+  marketplace_fixed_fee: number;
+  tax_pct: number;
+  ads_cost: number;
+  extra_costs: ExtraCost[];
+  status: "testando" | "aprovado" | "reprovado";
+  notes: string | null;
+  created_at: string;
+};
+
+export type MarketplaceProfile = {
+  id: string;
+  name: string;
+  fee_pct: number;
+  fixed_fee: number;
+  created_at: string;
 };
 
 const num = <T extends Record<string, unknown>>(row: T, keys: string[]) => {
@@ -101,7 +130,14 @@ export function useSales() {
         .order("sold_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map(
-        (r) => num(r, ["quantity", "unit_price", "unit_cost", "discount"]) as unknown as Sale,
+        (r) =>
+          num(r, [
+            "quantity",
+            "unit_price",
+            "unit_cost",
+            "discount",
+            "extra_expense",
+          ]) as unknown as Sale,
       );
     },
   });
@@ -136,12 +172,16 @@ export function useSaveProduct() {
       id,
       values,
       previousStock,
+      returnWindowDays,
     }: {
       id?: string | undefined;
       values: ProductInput;
       previousStock?: number;
+      returnWindowDays?: number | null;
     }) => {
       const user_id = await currentUserId();
+      const deadline =
+        returnWindowDays != null ? addDays(today(), returnWindowDays) : null;
 
       if (id) {
         const delta = previousStock !== undefined ? values.stock - previousStock : 0;
@@ -159,6 +199,7 @@ export function useSaveProduct() {
             quantity: delta,
             unit_cost: values.cost_price,
             purchased_at: today(),
+            refund_deadline: deadline,
             notes: "Reposição de estoque (editado em Produtos)",
           });
           if (purchaseError) throw purchaseError;
@@ -189,6 +230,7 @@ export function useSaveProduct() {
           quantity: initialStock,
           unit_cost: values.cost_price,
           purchased_at: today(),
+          refund_deadline: deadline,
           notes: "Estoque inicial (cadastro do produto)",
         });
         if (purchaseError) throw purchaseError;
@@ -198,7 +240,9 @@ export function useSaveProduct() {
   });
 }
 
-export function useDeleteRow(table: "products" | "purchases" | "sales") {
+export function useDeleteRow(
+  table: "products" | "purchases" | "sales" | "product_research" | "marketplace_profiles",
+) {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -217,11 +261,63 @@ export function useCreatePurchase() {
       quantity: number;
       unit_cost: number;
       purchased_at: string;
+      refund_deadline?: string | null;
       notes: string | null;
     }) => {
       const user_id = await currentUserId();
-      const { error } = await supabase.from("purchases").insert({ ...values, user_id });
+      const { error } = await supabase.from("purchases").insert({
+        ...values,
+        refund_deadline: values.refund_deadline ?? addDays(values.purchased_at, 7),
+        user_id,
+      });
       if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdatePurchaseRefund() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async ({
+      purchase,
+      refund_deadline,
+      refund_status,
+    }: {
+      purchase: Purchase;
+      refund_deadline: string | null;
+      refund_status: Purchase["refund_status"];
+    }) => {
+      const { error } = await supabase
+        .from("purchases")
+        .update({ refund_deadline, refund_status })
+        .eq("id", purchase.id);
+      if (error) throw error;
+
+      // Quando o status muda PRA "reembolsado", o produto voltou pro
+      // fornecedor: tira do estoque e o dinheiro deixa de contar como
+      // investido (Painel e Relatórios recalculam sozinhos a partir do
+      // estoque atual). Se você desfizer o reembolso, devolve a quantidade.
+      const wasRefunded = purchase.refund_status === "reembolsado";
+      const isRefunded = refund_status === "reembolsado";
+      if (wasRefunded === isRefunded) return;
+
+      const { data: product, error: fetchError } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", purchase.product_id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      const newStock = isRefunded
+        ? Math.max(product.stock - purchase.quantity, 0)
+        : product.stock + purchase.quantity;
+
+      const { error: stockError } = await supabase
+        .from("products")
+        .update({ stock: newStock })
+        .eq("id", purchase.product_id);
+      if (stockError) throw stockError;
     },
     onSuccess: invalidate,
   });
@@ -236,6 +332,7 @@ export function useCreateSale() {
       unit_price: number;
       unit_cost: number;
       discount: number;
+      extra_expense: number;
       sold_at: string;
       channel: string | null;
       notes: string | null;
@@ -262,6 +359,7 @@ export function useUpdateSale() {
         unit_price: number;
         unit_cost: number;
         discount: number;
+        extra_expense: number;
         sold_at: string;
         channel: string | null;
         notes: string | null;
@@ -273,6 +371,170 @@ export function useUpdateSale() {
       if (error) throw error;
     },
     onSuccess: invalidate,
+  });
+}
+
+// Taxas de marketplace que VOCÊ salvou — além das referências fixas do
+// app, ficam disponíveis pra reusar e editar depois de mudar.
+export function useMarketplaceProfiles() {
+  return useQuery({
+    queryKey: ["marketplace_profiles"],
+    queryFn: async (): Promise<MarketplaceProfile[]> => {
+      const { data, error } = await supabase
+        .from("marketplace_profiles")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []).map(
+        (r) => num(r, ["fee_pct", "fixed_fee"]) as unknown as MarketplaceProfile,
+      );
+    },
+  });
+}
+
+export function useSaveMarketplaceProfile() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["marketplace_profiles"] });
+  return useMutation({
+    mutationFn: async ({
+      id,
+      name,
+      fee_pct,
+      fixed_fee,
+    }: {
+      id?: string;
+      name: string;
+      fee_pct: number;
+      fixed_fee: number;
+    }) => {
+      if (id) {
+        const { error } = await supabase
+          .from("marketplace_profiles")
+          .update({ name, fee_pct, fixed_fee })
+          .eq("id", id);
+        if (error) throw error;
+        return;
+      }
+      const user_id = await currentUserId();
+      const { error } = await supabase
+        .from("marketplace_profiles")
+        .insert({ user_id, name, fee_pct, fixed_fee });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useProductResearch() {
+  return useQuery({
+    queryKey: ["product_research"],
+    queryFn: async (): Promise<ProductResearch[]> => {
+      const { data, error } = await supabase
+        .from("product_research")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        ...(num(r, [
+          "estimated_cost",
+          "estimated_price",
+          "marketplace_fee_pct",
+          "marketplace_fixed_fee",
+          "tax_pct",
+          "ads_cost",
+        ]) as unknown as ProductResearch),
+        extra_costs: (r.extra_costs as ExtraCost[] | null) ?? [],
+      }));
+    },
+  });
+}
+
+export type ProductResearchInput = {
+  name: string;
+  source: string | null;
+  estimated_cost: number;
+  estimated_price: number;
+  marketplace_fee_pct: number;
+  marketplace_fixed_fee: number;
+  tax_pct: number;
+  ads_cost: number;
+  extra_costs: ExtraCost[];
+  notes: string | null;
+};
+
+export function useSaveProductResearch() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["product_research"] });
+  return useMutation({
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      id?: string;
+      values: ProductResearchInput;
+    }) => {
+      const user_id = await currentUserId();
+      if (id) {
+        const { error } = await supabase.from("product_research").update(values).eq("id", id);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase
+        .from("product_research")
+        .insert({ ...values, user_id, status: "testando" });
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetResearchStatus() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["product_research"] });
+  return useMutation({
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: ProductResearch["status"];
+    }) => {
+      const { error } = await supabase.from("product_research").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+// Aprova um item mineirado e já cria o produto real (estoque 0, pra você
+// registrar a compra de verdade quando decidir investir). Marca o item de
+// mineração como "aprovado" — ele continua no histórico, não some.
+export function useApproveResearch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (item: ProductResearch) => {
+      const user_id = await currentUserId();
+      const { error: productError } = await supabase.from("products").insert({
+        user_id,
+        name: item.name,
+        cost_price: item.estimated_cost,
+        sale_price: item.estimated_price,
+        stock: 0,
+        min_stock: 0,
+        registered_at: today(),
+        notes: item.source ? `Vindo da mineração · fonte: ${item.source}` : "Vindo da mineração",
+      });
+      if (productError) throw productError;
+      const { error: statusError } = await supabase
+        .from("product_research")
+        .update({ status: "aprovado" })
+        .eq("id", item.id);
+      if (statusError) throw statusError;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["product_research"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
   });
 }
 

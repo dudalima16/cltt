@@ -42,9 +42,16 @@ function Relatorios() {
     const allSales = sales.data ?? [];
     const allPurchases = purchases.data ?? [];
 
-    const invested = allPurchases.reduce((s, p) => s + p.quantity * p.unit_cost, 0);
+    // Compra reembolsada não conta mais como dinheiro investido — o valor
+    // voltou pro seu bolso.
+    const invested = allPurchases
+      .filter((p) => p.refund_status !== "reembolsado")
+      .reduce((s, p) => s + p.quantity * p.unit_cost, 0);
     const revenue = allSales.reduce((s, v) => s + v.quantity * v.unit_price, 0);
-    const profit = allSales.reduce((s, v) => s + v.quantity * (v.unit_price - v.unit_cost), 0);
+    const profit = allSales.reduce(
+      (s, v) => s + v.quantity * (v.unit_price - v.unit_cost) - v.extra_expense,
+      0,
+    );
     const stockCost = list.reduce((s, p) => s + p.stock * p.cost_price, 0);
     const stockRevenue = list.reduce((s, p) => s + p.stock * p.sale_price, 0);
 
@@ -53,7 +60,10 @@ function Relatorios() {
         const rows = allSales.filter((s) => s.product_id === p.id);
         const sold = rows.reduce((s, v) => s + v.quantity, 0);
         const rev = rows.reduce((s, v) => s + v.quantity * v.unit_price, 0);
-        const prof = rows.reduce((s, v) => s + v.quantity * (v.unit_price - v.unit_cost), 0);
+        const prof = rows.reduce(
+          (s, v) => s + v.quantity * (v.unit_price - v.unit_cost) - v.extra_expense,
+          0,
+        );
         const daysList = rows.map((s) =>
           Math.round(
             (new Date(`${s.sold_at}T12:00:00`).getTime() -
